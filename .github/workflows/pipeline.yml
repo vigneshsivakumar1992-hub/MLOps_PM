@@ -1,102 +1,76 @@
-name: Engine Predictive Maintenance Pipeline
+name: Engine Predictive Maintenance pipeline
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
-
-  # ----------------------------
-  # 1. Dataset Registration
-  # ----------------------------
   register-dataset:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.10"
 
       - name: Install Dependencies
-        run: pip install -r engine_predictive_maintenance/requirements.txt
+        run: pip install -r epm/requirements.txt
 
       - name: Upload Dataset to Hugging Face Hub
         env:
-          HF_TOKEN_PM: ${{ secrets.HF_TOKEN_PM }}
-        run: python engine_predictive_maintenance/model_building/data_register.py
+          HF_TOKEN_EPM: ${{ secrets.HF_TOKEN_EPM }}
+        run: python epm/model_building/data_register.py
 
-
-  # ----------------------------
-  # 2. Data Preparation
-  # ----------------------------
   data-prep:
     needs: register-dataset
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.10"
 
       - name: Install Dependencies
-        run: pip install -r engine_predictive_maintenance/requirements.txt
+        run: pip install -r epm/requirements.txt
 
       - name: Run Data Preparation
         env:
-          HF_TOKEN_PM: ${{ secrets.HF_TOKEN_PM }}
-        run: python engine_predictive_maintenance/model_building/prep.py
+          HF_TOKEN_EPM: ${{ secrets.HF_TOKEN_EPM }}
+        run: python epm/model_building/prep.py
 
-
-  # ----------------------------
-  # 3. Model Training
-  # ----------------------------
   model-training:
     needs: data-prep
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.10"
 
       - name: Install Dependencies
-        run: pip install -r engine_predictive_maintenance/requirements.txt
+        run: pip install -r epm/requirements.txt
 
-      - name: Train Model
+      - name: Model Building
         env:
-          HF_TOKEN_PM: ${{ secrets.HF_TOKEN_PM }}
-        run: python engine_predictive_maintenance/model_building/train.py
+          HF_TOKEN_EPM: ${{ secrets.HF_TOKEN_EPM }}
+        run: python epm/model_building/train.py
 
-
-  # ----------------------------
-  # 4. Deployment to HF Space
-  # ----------------------------
   deploy-hosting:
-    needs: model-training
+    needs: [model-training, data-prep, register-dataset]
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.10"
 
       - name: Install Dependencies
-        run: pip install -r engine_predictive_maintenance/requirements.txt
+        run: pip install -r epm/requirements.txt
 
-      - name: Deploy to Hugging Face Space
+      - name: Push files to Frontend Hugging Face Space
         env:
-          HF_TOKEN_PM: ${{ secrets.HF_TOKEN_PM }}
-        run: python engine_predictive_maintenance/hosting/hosting.py
+          HF_TOKEN_EPM: ${{ secrets.HF_TOKEN_EPM }}
+        run: python epm/hosting/hosting.py
